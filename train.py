@@ -201,7 +201,7 @@ def loss(params, labels, logits, graph):
         # For this application, since background pixels heavily outnumber labeled pixels, we can weight
         # the loss to balance things out.
         if params['BALANCE_LOSS']:
-            weight  = tf.size(labels) / tf.cast(tf.count_nonzero(labels), tf.int32)
+            weight  = 100*tf.size(labels) / tf.cast(tf.count_nonzero(labels), tf.int32)
             weights = tf.where(labels==0, x=1, y=weight)
             losses  = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(labels, logits, weights=weights))
         else:
