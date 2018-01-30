@@ -76,7 +76,6 @@ def main(params):
 
                 _, summ = sess.run([opt, merged_summary], feed_dict = fd)
 
-                writer.add_summary(summ)
 
                 train_writer.add_summary(summ, step)
 
