@@ -245,8 +245,8 @@ def snapshot(params, labels, logits, graph):
         for label in xrange(len(params['LABEL_NAMES'])):
             target_img = tf.cast(tf.equal(labels, tf.constant(label, labels.dtype)), tf.float32)
             output_img = tf.cast(tf.equal(predicted_label, tf.constant(label, labels.dtype)), tf.float32)
-            tf.summary.image('{}_labels'.format(params['LABEL_NAMES'][label]), tf.reshape(target_img, target_img.get_shape().as_list() + [1,]), max_output=1)
-            tf.summary.image('{}_logits'.format(params['LABEL_NAMES'][label]), tf.reshape(output_img, output_img.get_shape().as_list() + [1,]), max_output=1)
+            tf.summary.image('{}_labels'.format(params['LABEL_NAMES'][label]), tf.reshape(target_img, target_img.get_shape().as_list() + [1,]), max_outputs=1)
+            tf.summary.image('{}_logits'.format(params['LABEL_NAMES'][label]), tf.reshape(output_img, output_img.get_shape().as_list() + [1,]), max_outputs=1)
 
 
 def summary(params, graph):
