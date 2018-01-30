@@ -147,7 +147,6 @@ def build_network(params, graph, input_image, training):
 
             # How many filters to return from upsampling?
             n_filters = network_filters[-1].get_shape().as_list()[-1]
-            print "Upsampling to make {} filters".format(n_filters)
 
             # Upsample:
             x = upsample_block(x, training, batch_norm=False,n_output_filters=n_filters, name="upsample_{}".format(i))
@@ -200,12 +199,13 @@ def loss(params, labels, logits, graph):
         # For this application, since background pixels heavily outnumber labeled pixels, we can weight
         # the loss to balance things out.
         if params['BALANCE_LOSS']:
-            weight  = 100*tf.size(labels) / tf.cast(tf.count_nonzero(labels), tf.int32)
+            weight  = tf.size(labels) / tf.cast(tf.count_nonzero(labels), tf.int32)
             weights = tf.where(labels==0, x=1, y=weight)
+            print weights.get_shape()
             losses  = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(labels, logits, weights=weights))
         else:
             # Compute the loss without balancing:
-            losses = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(labels, logits))
+            losses = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits))
 
         # Add the loss to the summary:
         tf.summary.scalar("Total_Loss", losses)
@@ -241,7 +241,6 @@ def snapshot(params, labels, logits, graph):
         # There are 5 labels plus background pixels available:
         predicted_label = tf.argmax(logits, axis=-1)
 
-        print predicted_label.get_shape()
 
         for label in xrange(len(params['LABEL_NAMES'])):
             target_img = tf.cast(tf.equal(labels, tf.constant(label, labels.dtype)), tf.float32)
