@@ -57,7 +57,7 @@ def main(params):
                 train_writer.add_graph(sess.graph)
                 saver = tf.train.Saver()
             else:
-                latest_checkpoint = tf.train.latest_checkpoint(LOGDIR+"/checkpoints/")
+                latest_checkpoint = tf.train.latest_checkpoint(params['LOGDIR']+"/checkpoints/")
                 print "Restoring model from {}".format(latest_checkpoint)
                 saver = tf.train.Saver()
                 saver.restore(sess, latest_checkpoint)
@@ -83,7 +83,7 @@ def main(params):
                 if step != 0 and step % params['SAVE_ITERATION'] == 0:
                     saver.save(
                         sess,
-                        LOGDIR+"/checkpoints/save",
+                        params['LOGDIR']+"/checkpoints/save",
                         global_step=step)
 
 
@@ -245,8 +245,8 @@ def snapshot(params, labels, logits, graph):
         for label in xrange(len(params['LABEL_NAMES'])):
             target_img = tf.cast(tf.equal(labels, tf.constant(label, labels.dtype)), tf.float32)
             output_img = tf.cast(tf.equal(predicted_label, tf.constant(label, labels.dtype)), tf.float32)
-            tf.summary.image('{}_labels'.format(params['LABEL_NAMES'][label]), tf.reshape(target_img, target_img.get_shape().as_list() + [1,]))
-            tf.summary.image('{}_logits'.format(params['LABEL_NAMES'][label]), tf.reshape(output_img, output_img.get_shape().as_list() + [1,]))
+            tf.summary.image('{}_labels'.format(params['LABEL_NAMES'][label]), tf.reshape(target_img, target_img.get_shape().as_list() + [1,]), max_output=1)
+            tf.summary.image('{}_logits'.format(params['LABEL_NAMES'][label]), tf.reshape(output_img, output_img.get_shape().as_list() + [1,]), max_output=1)
 
 
 def summary(params, graph):
