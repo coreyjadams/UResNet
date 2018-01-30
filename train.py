@@ -198,19 +198,35 @@ def loss(params, labels, logits, graph):
 
         # For this application, since background pixels heavily outnumber labeled pixels, we can weight
         # the loss to balance things out.
+
+        # Unreduced loss, shape [BATCH, L, W]
+        losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits)
+
+        n_pixels = losses.get_shape().as_list()[1]*losses.get_shape().as_list()[2]
+        print n_pixels
         if params['BALANCE_LOSS']:
-            weight  = tf.size(labels) / tf.cast(tf.count_nonzero(labels), tf.int32)
-            weights = tf.where(labels==0, x=1, y=weight)
-            print weights.get_shape()
-            losses  = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(labels, logits, weights=weights))
+            # for each label, count how many instances of each label there are
+            total_loss = tf.get_variable("total_loss", dtype=tf.float32, shape=())
+            total_loss.assign(0)
+            for label in xrange(len(params['LABEL_NAMES'])):
+                # Find the pixels for this label:
+                label_mask = tf.equal(labels, tf.constant(label, labels.dtype))
+                # Find how many are non zero:
+                weight = (n_pixels - tf.count_nonzero(label_mask)) / n_pixels
+                weight = tf.cast(weight, tf.float32)
+                # Pull out the parts of the loss that should have this label:
+                label_loss = tf.boolean_mask(losses, label_mask)
+                this_loss = tf.reduce_sum(label_loss)
+                total_loss += tf.multiply(weight, this_loss)
+
         else:
             # Compute the loss without balancing:
-            losses = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits))
+            total_loss = tf.reduce_sum(losses)
 
         # Add the loss to the summary:
-        tf.summary.scalar("Total_Loss", losses)
+        tf.summary.scalar("Total_Loss", total_loss)
 
-        return losses
+        return total_loss
 
 def accuracy(params, labels, logits, graph):
     with graph.as_default(), tf.name_scope('accuracy'):
