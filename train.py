@@ -27,7 +27,7 @@ def main(params):
                     'verbosity'   : 0,
                     'filler_cfg'  : 'train_io.cfg'}
     train_io.configure(train_io_cfg)
-    train_io.start_manager(4)
+    train_io.start_manager(params['BATCH_SIZE'])
     train_io.next()
 
 
@@ -93,6 +93,7 @@ def main(params):
                 #     if int(step) == step:
                 #         print 'Training in progress @ step %g, g_loss %g, d_loss %g accuracy %g' % (step, g_l, d_l, acc)
 
+
 def init_inputs(params, graph, data, label):
     with graph.as_default():
         input_image  = tf.placeholder(tf.float32, data.dim(), name="input_image")
@@ -146,8 +147,8 @@ def build_network(params, graph, input_image, training):
         for i in xrange(params['NETWORK_DEPTH']-1, -1, -1):
 
             # How many filters to return from upsampling?
-            n_filters = x.get_shape().as_list()[-1]
-
+            n_filters = network_filters[-1].get_shape().as_list()[-1]
+            print "Upsampling to make {} filters".format(n_filters)
 
             # Upsample:
             x = upsample_block(x, training, batch_norm=False,n_output_filters=n_filters, name="upsample_{}".format(i))
@@ -158,6 +159,18 @@ def build_network(params, graph, input_image, training):
             # Remove the recently concated filters:
             network_filters.pop()
 
+            # Include a bottleneck to reduce the number of filters after upsampling:
+            x = tf.layers.conv2d(x,
+                                 n_filters,
+                                 kernel_size=[1,1],
+                                 strides=[1,1],
+                                 padding='same',
+                                 activation=None,
+                                 use_bias=False,
+                                 trainable=training,
+                                 name="BottleneckUpsample_{}".format(i))
+
+            x = tf.nn.relu(x)
 
             # Residual
             x = residual_block(x, training,
@@ -226,11 +239,15 @@ def snapshot(params, labels, logits, graph):
     with graph.as_default(), tf.name_scope('snapshot'):
         # There are 5 labels plus background pixels available:
         predicted_label = tf.argmax(logits, axis=-1)
+
+        print predicted_label.get_shape()
+
         for label in xrange(len(params['LABEL_NAMES'])):
-            target_img = tf.cast(tf.equal(labels, tf.constant(label, labels.dtype)), tf.uint8)
-            output_img = tf.cast(tf.equal(predicted_label, tf.constant(label, labels.dtype)), tf.uint8)
+            target_img = tf.cast(tf.equal(labels, tf.constant(label, labels.dtype)), tf.float32)
+            output_img = tf.cast(tf.equal(predicted_label, tf.constant(label, labels.dtype)), tf.float32)
             tf.summary.image('{}_labels'.format(params['LABEL_NAMES'][label]), tf.reshape(target_img, target_img.get_shape().as_list() + [1,]))
             tf.summary.image('{}_logits'.format(params['LABEL_NAMES'][label]), tf.reshape(output_img, output_img.get_shape().as_list() + [1,]))
+
 
 def summary(params, graph):
     with graph.as_default():
