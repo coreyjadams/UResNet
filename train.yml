@@ -1,4 +1,5 @@
 BATCH_SIZE: 4
+SAVE_ITERATION: 500
 NUM_LABELS: 6 # (background, electron, muon, photon, pion, proton)
 N_INITIAL_FILTERS:  16
 NETWORK_DEPTH:  4
