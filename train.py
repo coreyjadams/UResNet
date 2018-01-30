@@ -158,19 +158,19 @@ def build_network(params, graph, input_image, training):
 
             # Remove the recently concated filters:
             network_filters.pop()
+            with tf.variable_scope("bottleneck_{}".format(i)):
+                # Include a bottleneck to reduce the number of filters after upsampling:
+                x = tf.layers.conv2d(x,
+                                     n_filters,
+                                     kernel_size=[1,1],
+                                     strides=[1,1],
+                                     padding='same',
+                                     activation=None,
+                                     use_bias=False,
+                                     trainable=training,
+                                     name="BottleneckUpsample_{}".format(i))
 
-            # Include a bottleneck to reduce the number of filters after upsampling:
-            x = tf.layers.conv2d(x,
-                                 n_filters,
-                                 kernel_size=[1,1],
-                                 strides=[1,1],
-                                 padding='same',
-                                 activation=None,
-                                 use_bias=False,
-                                 trainable=training,
-                                 name="BottleneckUpsample_{}".format(i))
-
-            x = tf.nn.relu(x)
+                x = tf.nn.relu(x)
 
             # Residual
             x = residual_block(x, training,
