@@ -177,6 +177,8 @@ def build_network(params, graph, input_image, training):
                                batch_norm=False,
                                name="resblock_up_{0}".format(i))
 
+        x = residual_block(x, training, batch_norm = False, name="FinalResidualBlock")
+
         # At this point, we ought to have a network that has the same shape as the initial input, but with more filters.
         # We can use a bottleneck to map it onto the right dimensions:
         x = tf.layers.conv2d(x,
