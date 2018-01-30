@@ -177,6 +177,8 @@ def build_network(params, graph, input_image, training):
                                batch_norm=False,
                                name="resblock_up_{0}".format(i))
 
+        x = residual_block(x, training, batch_norm = False, name="FinalResidualBlock")
+
         # At this point, we ought to have a network that has the same shape as the initial input, but with more filters.
         # We can use a bottleneck to map it onto the right dimensions:
         x = tf.layers.conv2d(x,
@@ -199,7 +201,7 @@ def loss(params, labels, logits, graph):
         # For this application, since background pixels heavily outnumber labeled pixels, we can weight
         # the loss to balance things out.
         if params['BALANCE_LOSS']:
-            weight  = tf.size(labels) / tf.cast(tf.count_nonzero(labels), tf.int32)
+            weight  = 100*tf.size(labels) / tf.cast(tf.count_nonzero(labels), tf.int32)
             weights = tf.where(labels==0, x=1, y=weight)
             losses  = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(labels, logits, weights=weights))
         else:
