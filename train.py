@@ -87,11 +87,11 @@ def main(params):
                         global_step=step)
 
 
-                # train_writer.add_summary(summ, i)
-                # sys.stdout.write('Training in progress @ step %d\n' % (step))
-                if i != 0 and int(10*step) == 10*step:
-                    if int(step) == step:
-                        print 'Training in progress @ step %g, g_loss %g, d_loss %g accuracy %g' % (step, g_l, d_l, acc)
+                # # train_writer.add_summary(summ, i)
+                # # sys.stdout.write('Training in progress @ step %d\n' % (step))
+                # if i != 0 and int(10*step) == 10*step:
+                #     if int(step) == step:
+                #         print 'Training in progress @ step %g, g_loss %g, d_loss %g accuracy %g' % (step, g_l, d_l, acc)
 
 def init_inputs(params, graph, data, label):
     with graph.as_default():
