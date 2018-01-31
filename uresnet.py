@@ -132,11 +132,22 @@ class uresnet(object):
         # Snapshotting:
         with tf.name_scope('snapshot'):
 
-            for label in xrange(len(self._params['LABEL_NAMES'])):
-                target_img = tf.cast(tf.equal(labels, tf.constant(label, labels.dtype)), tf.float32)
-                output_img = tf.cast(tf.equal(self._predicted_labels, tf.constant(label, labels.dtype)), tf.float32)
-                tf.summary.image('{}_labels'.format(self._params['LABEL_NAMES'][label]), tf.reshape(target_img, target_img.get_shape().as_list() + [1,]), max_outputs=1)
-                tf.summary.image('{}_logits'.format(self._params['LABEL_NAMES'][label]), tf.reshape(output_img, output_img.get_shape().as_list() + [1,]), max_outputs=1)
+            target_img = tf.cast(tf.reshape(labels, labels.get_shape().as_list() + [1,]), tf.float32)
+            target_img = tf.image.grayscale_to_rgb(target_img)
+            tf.summary.image('labels', target_img,max_outputs=10)
+
+            output_img = tf.cast(tf.reshape(self._predicted_labels, labels.get_shape().as_list() + [1,]), tf.float32)
+            output_img = tf.image.grayscale_to_rgb(output_img)
+            tf.summary.image('logits', output_img,max_outputs=10)
+            # for label in xrange(len(self._params['LABEL_NAMES'])):
+            #     target_img = tf.cast(
+            #         tf.equal(labels, tf.constant(label, labels.dtype)), tf.float32)
+            #     target_img = tf.reshape(target_img, target_img.get_shape().as_list() + [1,])
+            #     output_img = tf.cast(
+            #         tf.equal(self._predicted_labels, tf.constant(label, labels.dtype)), tf.float32)
+            #     output_img = tf.reshape(output_img, output_img.get_shape().as_list() + [1,])
+            #     tf.summary.image('{}_labels'.format(self._params['LABEL_NAMES'][label]), , max_outputs=1)
+            #     tf.summary.image('{}_logits'.format(self._params['LABEL_NAMES'][label]), tf.reshape(output_img, output_img.get_shape().as_list() + [1,]), max_outputs=1)
 
         # Merge the summaries:
         self._merged_summary = tf.summary.merge_all()
