@@ -125,7 +125,8 @@ class uresnet(object):
             self._zero_gradients =  [tv.assign(tf.zeros_like(tv)) for tv in self._accum_vars]
             self._accum_gradients = [self._accum_vars[i].assign_add(gv[0]) for
                                      i, gv in enumerate(opt.compute_gradients(self._loss))]
-            self._apply_gradients = opt.apply_gradients(zip(self._accum_vars, tf.trainable_variables()))
+            self._apply_gradients = opt.apply_gradients(zip(self._accum_vars, tf.trainable_variables()),
+                global_step = self._global_step)
 
 
         # Snapshotting:
