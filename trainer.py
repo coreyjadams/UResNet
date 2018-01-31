@@ -247,7 +247,8 @@ class uresnet_trainer(object):
             n_pixels = numpy.sum(counts)
             for value, count in zip(values, counts):
                 weight = 1.0*(n_pixels - count) / n_pixels
-                weights[i, weights[i] == value] += weight
+                mask = labels[i] == value
+                weights[i, mask] += weight
 
             weights[i] *= 1. / numpy.sum(weights[i])
             i += 1
