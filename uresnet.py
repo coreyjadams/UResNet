@@ -319,7 +319,7 @@ class uresnet(object):
         # We can use a bottleneck to map it onto the right dimensions:
         x = tf.layers.conv2d(x,
                              self._params['NUM_LABELS'],
-                             kernel_size=[1,1],
+                             kernel_size=[7,7],
                              strides=[1, 1],
                              padding='same',
                              activation=None,
