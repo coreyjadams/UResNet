@@ -221,7 +221,7 @@ def upsample_block(input_tensor,
 
             # Conv2d:
             x = tf.layers.conv2d_transpose(x, n_output_filters,
-                                 kernel_size=[3, 3],
+                                 kernel_size=[5,5],
                                  strides=[2, 2],
                                  padding='same',
                                  activation=None,
