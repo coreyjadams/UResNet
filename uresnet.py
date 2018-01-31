@@ -4,11 +4,10 @@ import tensorflow as tf
 
 from utils import residual_block, downsample_block, upsample_block
 
-
 # Declaring exception names:
-
 class ConfigurationException(Exception): pass
 class IncompleteFeedDict(Exception): pass
+
 
 
 # Main class
@@ -29,12 +28,12 @@ class uresnet(object):
             ConfigurationException -- Missing a required parameter
         '''
         required_params =[
-            'BATCH_SIZE',
+            'MINIBATCH_SIZE',
             'SAVE_ITERATION',
             'NUM_LABELS',
             'N_INITIAL_FILTERS',
             'NETWORK_DEPTH',
-            'RESIDUAL_BLOCKS_PER_LAYER'
+            'RESIDUAL_BLOCKS_PER_LAYER',
             'BALANCE_LOSS',
             'LOGDIR',
             'BASE_LEARNING_RATE',
@@ -61,15 +60,15 @@ class uresnet(object):
 
 
         # Initialize the input layers:
-        self._input_image  = tf.placeholder(tf.float32, [None,] + dims, name="input_image")
-        self._input_labels = tf.placeholder(tf.int64, [None,] + dims, name="input_image")
+        self._input_image  = tf.placeholder(tf.float32, dims, name="input_image")
+        self._input_labels = tf.placeholder(tf.int64, dims, name="input_image")
 
         # Prune off the last filter of the labels:
-        labels = tf.squeeze(input_labels, axis=-1)
+        labels = tf.squeeze(self._input_labels, axis=-1)
 
         if self._params['BALANCE_LOSS']:
-            self._input_weights = tf.placeholder(tf.int64, [None,] + dims, name="input_image")
-            weights = tf.squeeze(input_labels, axis=-1)
+            self._input_weights = tf.placeholder(tf.float32, dims, name="input_image")
+            weights = tf.squeeze(self._input_weights, axis=-1)
 
 
         logits = self._build_network(self._input_image)
@@ -89,7 +88,7 @@ class uresnet(object):
             # Find the non zero labels:
             non_zero_indices = tf.not_equal(labels, tf.constant(0, labels.dtype))
 
-            non_zero_logits = tf.boolean_mask(predicted_labels, non_zero_indices)
+            non_zero_logits = tf.boolean_mask(self._predicted_labels, non_zero_indices)
             non_zero_labels = tf.boolean_mask(labels, non_zero_indices)
 
             self._non_bkg_accuracy = tf.reduce_mean(tf.cast(tf.equal(non_zero_logits, non_zero_labels), tf.float32))
@@ -104,7 +103,7 @@ class uresnet(object):
             # Unreduced loss, shape [BATCH, L, W]
             losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=logits)
 
-            if params['BALANCE_LOSS']:
+            if self._params['BALANCE_LOSS']:
                 losses = tf.multiply(losses, weights)
 
             self._loss = tf.reduce_mean(tf.reduce_sum(losses, axis=[1,2]))
@@ -115,13 +114,12 @@ class uresnet(object):
 
         # Optimizer:
         with tf.name_scope("training"):
-            global_step = tf.Variable(0, dtype=tf.int32,
+            self._global_step = tf.Variable(0, dtype=tf.int32,
                 trainable=False, name='global_step')
             if self._params['BASE_LEARNING_RATE'] <= 0:
-                opt = tf.train.AdamOptimizer().minimize(loss, global_step = global_step)
+                opt = tf.train.AdamOptimizer()
             else:
-                opt = tf.train.AdamOptimizer(params['BASE_LEARNING_RATE']).minimize(
-                    loss, global_step = global_step)
+                opt = tf.train.AdamOptimizer(self._params['BASE_LEARNING_RATE'])
 
             # Variables for minibatching:
             self._zero_gradients =  [tv.assign(tf.zeros_like(tv)) for tv in self._accum_vars]
@@ -133,17 +131,19 @@ class uresnet(object):
         # Snapshotting:
         with tf.name_scope('snapshot'):
 
-            for label in xrange(len(params['LABEL_NAMES'])):
+            for label in xrange(len(self._params['LABEL_NAMES'])):
                 target_img = tf.cast(tf.equal(labels, tf.constant(label, labels.dtype)), tf.float32)
                 output_img = tf.cast(tf.equal(self._predicted_labels, tf.constant(label, labels.dtype)), tf.float32)
-                tf.summary.image('{}_labels'.format(params['LABEL_NAMES'][label]), tf.reshape(target_img, target_img.get_shape().as_list() + [1,]), max_outputs=1)
-                tf.summary.image('{}_logits'.format(params['LABEL_NAMES'][label]), tf.reshape(output_img, output_img.get_shape().as_list() + [1,]), max_outputs=1)
+                tf.summary.image('{}_labels'.format(self._params['LABEL_NAMES'][label]), tf.reshape(target_img, target_img.get_shape().as_list() + [1,]), max_outputs=1)
+                tf.summary.image('{}_logits'.format(self._params['LABEL_NAMES'][label]), tf.reshape(output_img, output_img.get_shape().as_list() + [1,]), max_outputs=1)
 
         # Merge the summaries:
         self._merged_summary = tf.summary.merge_all()
 
-        self._writer = tf.summary.FileWriter(params['LOGDIR'])
 
+    def apply_gradients(self,sess):
+
+        return sess.run( [self._apply_gradients], feed_dict = {})
 
 
     def feed_dict(self, images, labels, weights=None):
@@ -224,8 +224,10 @@ class uresnet(object):
 
         return sess.run( ops, feed_dict = feed_dict )
 
+    def global_step(self, sess):
+        return sess.run(self._global_step)
 
-    def _build_network(input_placeholder):
+    def _build_network(self, input_placeholder):
 
         x = input_placeholder
 
