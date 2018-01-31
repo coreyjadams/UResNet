@@ -231,11 +231,10 @@ class uresnet(object):
     def _build_network(self, input_placeholder):
 
         x = input_placeholder
-
         # Initial convolution to get to the correct number of filters:
-        x = tf.layers.conv2d_transpose(x, self._params['N_INITIAL_FILTERS'],
+        x = tf.layers.conv2d(x, self._params['N_INITIAL_FILTERS'],
                              kernel_size=[7, 7],
-                             strides=[2, 2],
+                             strides=[1, 1],
                              padding='same',
                              use_bias=False,
                              trainable=self._params['TRAINING'],
