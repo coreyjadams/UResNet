@@ -234,8 +234,8 @@ class uresnet(object):
 
         # Initial convolution to get to the correct number of filters:
         x = tf.layers.conv2d_transpose(x, self._params['N_INITIAL_FILTERS'],
-                             kernel_size=[5, 5],
-                             strides=[1, 1],
+                             kernel_size=[7, 7],
+                             strides=[2, 2],
                              padding='same',
                              use_bias=False,
                              trainable=self._params['TRAINING'],
